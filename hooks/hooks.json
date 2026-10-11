@@ -1,0 +1,4 @@
+{
+  "hooks": {},
+  "modules": ["./reply-links.mjs"]
+}

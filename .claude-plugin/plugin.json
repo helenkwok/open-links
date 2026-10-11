@@ -1,0 +1,23 @@
+{
+  "name": "reply-links",
+  "version": "0.1.0",
+  "description": "A Claude Code mod: file paths in Claude's replies become links that open the file (or your editor at the line). macOS, Linux and Windows paths, relative ones resolved against the session folder.",
+  "author": {
+    "name": "Helen Kwok"
+  },
+  "license": "MIT",
+  "userConfig": {
+    "editor": {
+      "title": "Editor command",
+      "description": "Open files with this command instead of the default app, at the line when the path has one (code, cursor, windsurf: anything that takes -g file:line). Empty: the default app.",
+      "type": "string",
+      "default": ""
+    },
+    "skipPlanning": {
+      "title": "Leave .planning markdown to gsd-status-mod",
+      "description": "Skip markdown files under .planning, which gsd-status-mod already links to its reader.",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}
