@@ -48,4 +48,15 @@ To try it for one session without installing:
     git clone https://github.com/helenkwok/open-links ~/open-links
     claude --plugin-dir ~/open-links
 
-Tests: `node --test tests/*.test.mjs`.
+## Development
+
+TypeScript 7, loaded by Claude Code as is (no build step). Node 24 or later.
+
+    npm ci
+    npm test          # node:test on tests/*.spec.ts (Node runs the .ts directly)
+    npm run lint      # oxlint
+    npm run check     # tsc (TypeScript 7) and oxlint's type-aware rules
+
+`npm run check` needs `.claude-plugin/types/`, which Claude Code writes when it loads the mod from this folder (run
+`claude --plugin-dir .` once); those files are not in git, so CI runs the tests and the plain lint only. ESLint is not
+used: typescript-eslint does not support TypeScript 7 yet.

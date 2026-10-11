@@ -1,4 +1,4 @@
 {
   "hooks": {},
-  "modules": ["./open-links.mjs"]
+  "modules": ["./open-links.ts"]
 }
