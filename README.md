@@ -34,9 +34,18 @@ The reply is drawn exactly as Claude wrote it. Under it, one line carries a link
 `$.ui.toast`, and `$.process.run` only when you click a link (the opener or your editor, by argument list, no shell).
 No network, no writes.
 
-## Try it
+## Install
 
-    git clone <repo> ~/open-links
+Claude Code 2.1.287 or later:
+
+    claude plugin marketplace add helenkwok/gsd-status-mod
+    claude plugin install open-links@helenkwok-mods
+
+The marketplace is shared with gsd-status-mod. Set the editor with `/plugin configure open-links@helenkwok-mods`.
+
+To try it for one session without installing:
+
+    git clone https://github.com/helenkwok/open-links ~/open-links
     claude --plugin-dir ~/open-links
 
 Tests: `node --test tests/*.test.mjs`.
