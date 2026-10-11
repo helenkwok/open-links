@@ -1,4 +1,4 @@
-# reply-links
+# open-links
 
 A Claude Code mod: file paths in Claude's replies become links. Claude Code 2.1.296 draws them as plain text
 ([anthropics/claude-code#79839](https://github.com/anthropics/claude-code/issues/79839)), so `src/foo.ts:42` or
@@ -36,7 +36,7 @@ No network, no writes.
 
 ## Try it
 
-    git clone <repo> ~/reply-links
-    claude --plugin-dir ~/reply-links
+    git clone <repo> ~/open-links
+    claude --plugin-dir ~/open-links
 
 Tests: `node --test tests/*.test.mjs`.

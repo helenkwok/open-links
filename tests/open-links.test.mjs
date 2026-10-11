@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pathRefs, absolute, opener, register } from "../hooks/reply-links.mjs";
+import { pathRefs, absolute, opener, register } from "../hooks/open-links.mjs";
 
 test("pathRefs: absolute, home, Windows, relative and bare paths with their line; no web links or climbing out", () => {
   const t = "See src/foo.ts:42, README.md and `F:\\w\\ifc\\README.md`, ~/x/notes.md, /etc/hosts. .planning/a.md, ./b.ts:3:7 https://a.io/b.md ../up.md 3.5";

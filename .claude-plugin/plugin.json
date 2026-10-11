@@ -1,5 +1,5 @@
 {
-  "name": "reply-links",
+  "name": "open-links",
   "version": "0.1.0",
   "description": "A Claude Code mod: file paths in Claude's replies become links that open the file (or your editor at the line). macOS, Linux and Windows paths, relative ones resolved against the session folder.",
   "author": {

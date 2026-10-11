@@ -1,4 +1,4 @@
-// reply-links: file paths in Claude's replies become links. Claude Code 2.1.296 draws them as plain text
+// open-links: file paths in Claude's replies become links. Claude Code 2.1.296 draws them as plain text
 // (anthropics/claude-code#79839), so `src/foo.ts:42` or `F:\work\README.md` cannot be opened from the transcript.
 // The reply is drawn as written; a line under it carries one link per path that exists.
 
@@ -83,11 +83,11 @@ export function register(on, options) {
       const argv = opener(f.abs, f.line, editor, os);
       const r = await $.process.run(argv, { timeoutMs: 15000 }).catch((err) => ({ exitCode: -1, stderr: String(err) }));
       // explorer exits 1 even when it opened the file, so only a failure to start counts there
-      if (r.exitCode !== 0 && !(os === "windows" && !editor && r.exitCode === 1)) $.ui.toast(`reply-links: could not open ${f.text} (${argv[0]})`);
+      if (r.exitCode !== 0 && !(os === "windows" && !editor && r.exitCode === 1)) $.ui.toast(`open-links: could not open ${f.text} (${argv[0]})`);
     };
     return Box({ flexDirection: "column", children: [
       await next(e),
-      Box({ paddingLeft: 2, children: [Markdown({ key: "reply-links", dimColor: true, text, pressableLinks: found.map((f) => f.href), onLinkPress: (l) => void press(l) })] }),
+      Box({ paddingLeft: 2, children: [Markdown({ key: "open-links", dimColor: true, text, pressableLinks: found.map((f) => f.href), onLinkPress: (l) => void press(l) })] }),
     ] });
   });
 }

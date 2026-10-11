@@ -1,4 +1,4 @@
 {
   "hooks": {},
-  "modules": ["./reply-links.mjs"]
+  "modules": ["./open-links.mjs"]
 }
