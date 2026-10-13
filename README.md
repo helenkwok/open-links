@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/helenkwok/open-links/actions/workflows/test.yml"><img alt="tests" src="https://github.com/helenkwok/open-links/actions/workflows/test.yml/badge.svg"></a>
-  <img alt="version 0.1.0" src="https://img.shields.io/badge/version-0.1.0-d97757">
+  <img alt="version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-d97757">
   <img alt="Claude Code 2.1.287+" src="https://img.shields.io/badge/Claude%20Code-2.1.287%2B-d97757">
   <img alt="TypeScript 7" src="https://img.shields.io/badge/TypeScript-7-3178c6">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3fb950"></a>
@@ -46,6 +46,9 @@ The marketplace is shared with [gsd-status-mod](https://github.com/helenkwok/gsd
 
 - **Every kind of path**: absolute (`/etc/hosts`), home (`~/x.md`), Windows (`F:\work\a.md`, `F:/work/a.md`), relative to
   the session folder (`src/foo.ts`, `./b.ts`), and bare file names there (`README.md`).
+- **Paths outside the session folder**: a relative path Claude wrote while working elsewhere (`runs/x/a.png` after its
+  tools ran in `~/data/project`) is found through the folders this session's tools named, including earlier turns of a
+  resumed session, or through the `roots` setting. It links only when exactly one file matches.
 - **Line numbers**: `:42` and `:42:7` stay in the label; with an editor set, a click opens it at that line.
 - **Only real files**: a path that does not exist gets no link, so there are no dead links. Web links, version numbers
   and paths that climb out with `..` are skipped.
@@ -59,13 +62,16 @@ The marketplace is shared with [gsd-status-mod](https://github.com/helenkwok/gsd
 | --- | --- | --- |
 | `editor` | Command to open files at the line (`code`, `cursor`, `windsurf`: anything that takes `-g file:line`). Empty: the default app. | `""` |
 | `skipPlanning` | Skip markdown under `.planning`, which gsd-status-mod already links. | `true` |
+| `roots` | Extra folders to resolve relative paths against, separated by `;` (`~` allowed). The folders this session's tools worked in are learned without it. | `""` |
 
 ## 🧠 How it works
 
 1. **Find**: a `ui.render` hook on each reply (`AssistantMessage`) picks out the words that look like paths, with their
    `:line`.
 2. **Check**: each one is resolved against the session folder (or home, or taken as absolute) and checked with
-   `$.fs.stat`, at most once a minute per path. Network locations (`//host`, `/net`, `/Network`) are never checked.
+   `$.fs.stat`, at most once a minute per path. A relative path that is not there is tried under the `roots`, and under
+   the folders named in this session's tool calls (noted as each call starts, and read back once from the conversation
+   so a resumed session has them) and in replies; it is linked only if exactly one of those holds the file. Network locations (`//host`, `/net`, `/Network`) are never checked.
 3. **Draw**: the engine draws the reply as usual; one dim line under it, `⎿ open: …`, carries a `file://` link for each
    path that exists.
 4. **Open**: clicks reach a mod in Claude Code's fullscreen terminal. A click runs the opener or your editor by argument
@@ -75,8 +81,10 @@ The marketplace is shared with [gsd-status-mod](https://github.com/helenkwok/gsd
 
 `claude plugin validate .claude-plugin/plugin.json` lists it:
 
-- **Hook**: `ui.render` for `AssistantMessage`.
-- **Calls**: `$.fs.stat` (does a path exist), `$.session.cwd`, `$.env.get` (`HOME`, `USERPROFILE`), `$.clock.now`,
+- **Hooks**: `ui.render` for `AssistantMessage`, and `tool.call`, which only notes the paths in a call's arguments and
+  passes the call on unchanged.
+- **Calls**: `$.fs.stat` (does a path exist), `$.session.cwd`, `$.session.messages` (once, for the paths in earlier
+  tool calls), `$.env.get` (`HOME`, `USERPROFILE`), `$.clock.now`,
   `$.ui.resolve`, `$.ui.toast`, and `$.process.run` only when you click a link.
 - No network, no writes, no file contents read.
 
@@ -85,8 +93,9 @@ The marketplace is shared with [gsd-status-mod](https://github.com/helenkwok/gsd
 **Nothing is clickable.** Clicks reach a mod only in Claude Code's fullscreen terminal. Outside it, your terminal must
 open `file://` hyperlinks itself (iTerm2 and Terminal.app use ⌘-click).
 
-**A path has no link.** It does not exist from the session's folder, it climbs out with `..`, or it is markdown under
-`.planning` with `skipPlanning` on.
+**A path has no link.** It is not in the session folder, the `roots` or a folder this session's tools named, it is in
+more than one of them (open-links does not guess), it climbs out with `..`, or it is markdown under `.planning` with
+`skipPlanning` on. Add the folder to `roots` to fix the first case.
 
 **Does it work on Windows?** Windows paths are handled and unit-tested; a live run on Windows has not been done yet.
 

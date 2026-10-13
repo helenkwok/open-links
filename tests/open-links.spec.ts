@@ -47,3 +47,57 @@ test("a reply draws as written, with a line of links to paths that exist; a pres
   assert.equal(await h($, plain, async (x: unknown) => x), plain);
   assert.equal(await h($, { ...plain, surface: "desktop", props: { text: "README.md" } }, async (x: unknown) => x).then((x) => x.surface), "desktop");
 });
+
+import { pathsIn, candidates } from "../hooks/open-links.ts";
+
+test("pathsIn: absolute, home and Windows paths in a command or reply; not URLs or relative words", () => {
+  assert.deepEqual(pathsIn("cd /Users/h/.tf/data/estate01a && python x.py --out ~/runs/a.png F:\\w\\b.md https://e.com/c/d src/e.ts", "/Users/h"),
+    ["/Users/h/.tf/data/estate01a", "/Users/h/runs/a.png", "F:/w/b.md"]);
+});
+
+test("candidates: a relative path under the folder a known path passes through, a bare name beside it, roots first", () => {
+  const known = ["/d/estate01a/runs/spike018/loop1/x.json"];
+  assert.deepEqual(candidates("runs/spike019/a.png", known, []), ["/d/estate01a/runs/spike019/a.png"]);
+  assert.deepEqual(candidates("a.png", known, ["/r"]), ["/r/a.png", "/d/estate01a/runs/spike018/loop1/a.png", "/d/estate01a/runs/spike018/loop1/x.json/a.png"]);
+  assert.deepEqual(candidates("runs/a.png", ["/d/truns/x"], []), []); // a folder whose name only ends the same is no match
+});
+
+test("a relative path outside the session folder resolves through the folders its tools worked in, read back on resume", async () => {
+  type Hook = (...a: any[]) => Promise<any>;
+  const hooks: Record<string, Hook> = {};
+  // a fresh copy of the module: what it learned and read back belongs to one load, like a session
+  const fresh = (await import(`../hooks/open-links.ts?copy=${Date.now()}`)) as typeof import("../hooks/open-links.ts");
+  fresh.register(((n: string, _m: unknown, fn?: Hook) => { hooks[n] = (fn ?? _m) as Hook; }) as never, { roots: "" });
+  const files = new Set(["/data/estate01a/runs/spike019/loop1/k.png", "/other/runs/spike019/loop1/twin.png", "/data/estate01a/runs/spike019/loop1/twin.png"]);
+  let history: unknown[] = [];
+  const $ = {
+    clock: { now: async () => 0 }, session: { cwd: async () => "/proj", messages: async () => history },
+    env: { get: async (n: string) => (n === "HOME" ? "/Users/h" : undefined) },
+    fs: { stat: async (p: string) => (files.has(p) ? { kind: "file" } : Promise.reject(new Error("no"))) },
+    ui: { resolve: () => ({ Box: (p: unknown) => ({ box: p }), Markdown: (p: unknown) => ({ md: p }) }), toast: () => {} },
+    process: { run: async () => ({ exitCode: 0 }) },
+  };
+  const draw = async (text: string) => (await hooks["ui.render"]!($, { surface: "terminal", props: { text } }, async (x: unknown) => x)) as any;
+  history = [{ role: "assistant", content: [{ type: "tool_use", input: { command: "ls /data/estate01a/runs/spike018" } }] }]; // an earlier turn, before this load
+  const out = await draw("The image is runs/spike019/loop1/k.png.");
+  assert.match(out.box.children[1].box.children[0].md.text, /\[runs\/spike019\/loop1\/k\.png\]\(file:\/\/\/data\/estate01a\/runs\/spike019\/loop1\/k\.png\)/);
+  await hooks["tool.call"]!($, { tool: "Bash", command: "cat /other/runs/spike019/notes.txt" }, async (x: unknown) => x); // now two folders have runs/
+  const twin = await draw("See runs/spike019/loop1/twin.png.");
+  assert.equal(twin.props.text, "See runs/spike019/loop1/twin.png."); // both have it: no guess, no link
+});
+
+test("roots: a relative path found under a configured folder; ~ expanded", async () => {
+  type Hook = (...a: any[]) => Promise<any>;
+  const hooks: Record<string, Hook> = {};
+  const fresh = (await import(`../hooks/open-links.ts?roots=${Date.now()}`)) as typeof import("../hooks/open-links.ts");
+  fresh.register(((n: string, _m: unknown, fn?: Hook) => { hooks[n] = (fn ?? _m) as Hook; }) as never, { roots: "~/.tf/estate01a; /nowhere" });
+  const $ = {
+    clock: { now: async () => 0 }, session: { cwd: async () => "/proj", messages: async () => [] },
+    env: { get: async (n: string) => (n === "HOME" ? "/Users/h" : undefined) },
+    fs: { stat: async (p: string) => (p === "/Users/h/.tf/estate01a/runs/a.png" ? { kind: "file" } : Promise.reject(new Error("no"))) },
+    ui: { resolve: () => ({ Box: (p: unknown) => ({ box: p }), Markdown: (p: unknown) => ({ md: p }) }), toast: () => {} },
+    process: { run: async () => ({ exitCode: 0 }) },
+  };
+  const out = (await hooks["ui.render"]!($, { surface: "terminal", props: { text: "Saved runs/a.png." } }, async (x: unknown) => x)) as any;
+  assert.match(out.box.children[1].box.children[0].md.text, /file:\/\/\/Users\/h\/\.tf\/estate01a\/runs\/a\.png/);
+});
